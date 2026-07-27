@@ -75,3 +75,20 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   hidden-name SFOs. Move to independent sources next: SEC Form D (different filer
   population: private-placement issuers, and it lists related persons = free principals),
   then non-SEC/non-US (UK Companies House public site, Singapore, press/conference).
+
+### [2026-07-28] discovery — UK Companies House (public site, no key)
+- Goal: an independent, non-US population to break SEC's blind spot.
+- Method: `pipeline/discovery/uk_companies_house.py` scrapes the public advanced-search
+  results (no login/key needed), paginated, keeping only status=Active. User could not
+  register for a CH API key (no GOV.UK One Login account); public site fully sufficient.
+- Result: **53 active UK candidates.** Quality is mixed: genuine-looking SFOs (Wedgwood,
+  Davidoff Frey, Blu) next to service/insurance firms (Simon Family Office Insures,
+  Weybridge Family Office Services) and micro-entities.
+- Honest caveats logged now, not hidden: (1) UK name-search shares the hidden-name blind
+  spot — substantive UK SFOs are often NOT named "family office", so this source
+  under-covers the real UK market; (2) parser bug leaks a "SIC codes -" line into the city
+  field for some rows — cosmetic, will be corrected in enrichment from each firm's clean
+  profile page. Expect heavy Rule-2 rejection here.
+- Decision: 53 UK candidates is enough raw material; do not over-mine a noisy source. Next:
+  a genuinely different mechanism for hidden-name SFOs (press/known-family + conference
+  rosters) and a Singapore slice for the "global" claim.
