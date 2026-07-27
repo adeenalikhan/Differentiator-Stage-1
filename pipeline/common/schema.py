@@ -46,7 +46,8 @@ GENERIC_EMAIL_LOCALPARTS = {
 
 # Discovery source *classes* — used to measure single-source concentration.
 DISCOVERY_SOURCE_CLASSES = [
-    "sec-adv",            # SEC IAPD / Form ADV
+    "sec-13f",            # SEC EDGAR Form 13F-HR (US anchor; corrected from ADV)
+    "sec-adv",            # adviserinfo.sec.gov (registered MFOs/RIAs only)
     "uk-companies-house",
     "apac-eu-registry",   # MAS/ACRA/other non-US registries
     "press",              # reputable press / rich-lists

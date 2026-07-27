@@ -54,3 +54,24 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
 - Decision: demote ADV from "anchor." It remains useful for registered MFOs/RIAs via
   adviserinfo.sec.gov (separate fetch, not EDGAR FTS), but it cannot be the SFO backbone.
   This is the first place the plan broke on contact; logged to METHODOLOGY Part 2.
+
+### [2026-07-28] discovery — SEC 13F harvester (built + run)
+- Goal: turn the 13F vein into a real candidate pool in the store.
+- Method: `pipeline/discovery/sec_13f.py`. Two bugs found and fixed during the run:
+    1. **EDGAR company-name search is prefix-only** — `company=family office` matches only
+       names *starting* with it ("Family Office Research LLC"), not "Duquesne Family
+       Office". So name-search is near-useless here; full-text is the workhorse. Kept but
+       demoted.
+    2. **FTS page size is 100, not 10** — my first loop stepped `from` by 10 and re-read the
+       same first 100 filings, yielding only 42 distinct. Real usable range is `from=0..890`
+       (from=990 returns 0). Fixed to step by 100.
+- Result: **53 distinct SEC-13F candidates** stored. 31 self-signal as family offices by
+  name (incl. Duquesne/Druckenmiller, Louis-Dreyfus, Callan, Biltmore, Custos). ~5 clear
+  false positives present (Bank of Montreal, Deutsche Bank, AQR, Bryn Mawr Bank) — their
+  13F info tables contain the phrase but they are not family offices; these will be rejected
+  in Phase 2 classification.
+- Decision: SEC-13F is a sufficient anchor (need only <=~17 of the final 50 from any one
+  class). Do NOT try to squeeze more from 13F phrase search — it structurally misses
+  hidden-name SFOs. Move to independent sources next: SEC Form D (different filer
+  population: private-placement issuers, and it lists related persons = free principals),
+  then non-SEC/non-US (UK Companies House public site, Singapore, press/conference).
