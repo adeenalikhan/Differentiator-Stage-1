@@ -161,3 +161,19 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
 - Two pipeline bugs found + fixed: research JSON used `legal_name` (aliased), and the
   ingester's upsert could spawn a duplicate row once enrichment added a domain (added
   `update_by_record_id`, which never recomputes the dedup key).
+
+### [2026-07-28] principal/contact — FAILED attempt: recursive agent delegation
+- Goal: scale enrichment by running research agents over 12-firm (13F) and 9-firm (UK)
+  batches in parallel.
+- What happened: the batch agents, given a longer firm list, decided to "parallelize" by
+  spawning their OWN sub-agents (children named "Research 3 family offices A/B/D") instead of
+  doing the research themselves. Those children in turn tried to delegate again. The whole
+  tree returned "I'll wait for the other agents to finish" and **wrote no output files**.
+  ~250k tokens spent for zero records.
+- Why: the 6-firm calibration agent did the work itself and succeeded; the larger batches
+  tripped a coordinator instinct. Lesson: a general-purpose agent with the Agent/Task tool
+  will over-delegate when the task looks big.
+- Fix: relaunched with (1) an explicit "do ALL research yourself; do NOT use the Agent/Task
+  tool; do not spawn or wait on sub-agents" instruction at the top, and (2) batches capped at
+  6. Recorded here rather than hidden — it's a real cost and a real lesson about orchestrating
+  research agents.
