@@ -82,6 +82,31 @@ def upsert(rec: Record, raw: Optional[dict] = None, status: Optional[str] = None
     return key
 
 
+def update_by_record_id(record_id: str, rec: Record, status: Optional[str] = None):
+    """Update the EXISTING row identified by record_id with non-empty incoming fields.
+    Unlike upsert(), this never recomputes the dedup key, so enrichment that adds a domain
+    cannot spawn a duplicate row."""
+    con = connect()
+    row = con.execute("SELECT dedup_key FROM candidates WHERE record_id=?", (record_id,)).fetchone()
+    if not row:
+        con.close()
+        return None
+    key = row["dedup_key"]
+    data = rec.to_dict()
+    sets, vals = [], []
+    for c in _RECORD_COLS:
+        if data.get(c):
+            sets.append(f'"{c}"=?'); vals.append(data[c])
+    if status:
+        sets.append('"status"=?'); vals.append(status)
+    if sets:
+        vals.append(key)
+        con.execute(f"UPDATE candidates SET {', '.join(sets)} WHERE dedup_key=?", vals)
+        con.commit()
+    con.close()
+    return key
+
+
 def audit(dedup_key: str, firm: str, field: str, value: str, reason: str, ts: str = "2026-07-28"):
     con = connect()
     con.execute("INSERT INTO audit (ts,dedup_key,firm,field,value,reason) VALUES (?,?,?,?,?,?)",

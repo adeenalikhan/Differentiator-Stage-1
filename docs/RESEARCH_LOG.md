@@ -137,3 +137,27 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   Druckenmiller principal, email likely unresolved; Louis-Dreyfus = SFO, disambiguated from
   the Louis Dreyfus commodities company. These manual checks inform the agent instructions;
   the shipped values will be pipeline-produced, not hand-typed.
+
+### [2026-07-28] principal/contact — calibration results + independent verification
+- Agent returned 6 sourced records. Quality was high and, importantly, HONEST:
+    - Correctly reclassified Boston / Callan / Arrowroot / Custos as **MFOs**, not SFOs,
+      despite the "family office" branding (789 client accounts at Boston; $50M-min UHNW
+      client base at Callan). Only Duquesne + Louis-Dreyfus are true SFOs.
+    - **Refused to ship guessed emails**: excluded a ZoomInfo masked pattern (Boston) and a
+      RocketReach broker listing (Arrowroot) as not published/attested — exactly the rule.
+    - Flagged Louis-Dreyfus family branch as INFERRED (entity-confusion with the LDC
+      commodities firm) and its 13F as lapsed since Q3 2022 (stale signal).
+    - Flagged that Custos's true investment decision-maker is CIO Lopiccolo, not signatory
+      Herr.
+- **Independent verification (me, re-fetching the cited pages):**
+    - callanfamilyoffice.com/team/jack-ginter/ → confirms `jginter@callanfo.com`. ✓
+    - custosfo.com team bios → confirm `mitchell@custosfo.com` + `anthony@custosfo.com`. ✓
+  The agent did not fabricate. Approach validated end-to-end (discover → traverse → enrich →
+  gate → verify), no duplicate rows created.
+- Email hit-rate: **2/6 firms** (both MFOs with team pages); 0/2 SFOs — confirms the SFO/MFO
+  completeness asymmetry predicted in METHODOLOGY §1.5. Consequence for strategy: to earn the
+  "SFO prize" the file must lean on press/hidden-name discovery for SFO *count*, and accept
+  honest email blanks on those high-value records.
+- Two pipeline bugs found + fixed: research JSON used `legal_name` (aliased), and the
+  ingester's upsert could spawn a duplicate row once enrichment added a domain (added
+  `update_by_record_id`, which never recomputes the dedup key).

@@ -97,7 +97,17 @@ def ingest():
 
             rec = Record(
                 record_id=rid,
-                firm_legal_name=obj.get("firm_legal_name", ""),
+                firm_legal_name=obj.get("firm_legal_name") or obj.get("legal_name", ""),
+                firm_common_name=obj.get("firm_common_name", ""),
+                # discovery fields (populated when a research agent DISCOVERS a new firm)
+                discovery_source_class=obj.get("discovery_source_class", ""),
+                discovery_source_detail=obj.get("discovery_source_detail", ""),
+                discovery_url=obj.get("discovery_url", ""),
+                hq_city=obj.get("hq_city", ""),
+                hq_region=obj.get("hq_region", ""),
+                hq_country=obj.get("hq_country", ""),
+                principal_phone=obj.get("principal_phone", ""),
+                phone_source=obj.get("phone_source", ""),
                 website=obj.get("website", ""),
                 domain=obj.get("domain", ""),
                 url_quality=obj.get("url_quality", ""),
@@ -127,7 +137,8 @@ def ingest():
                 caveats=obj.get("caveats", ""),
                 last_validated="",
             )
-            store.upsert(rec)
+            if store.update_by_record_id(rid, rec) is None:
+                store.upsert(rec)  # new firm discovered during enrichment (rare)
             n += 1
     print(f"Ingested {n} enriched records.")
 
