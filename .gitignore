@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+*.key
+secrets/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# node
+node_modules/
+.next/
+dist/
+
+# caches (NOT the data itself — we keep data/ under version control)
+.cache/
+pipeline/**/.cache/
+*.log.tmp
+
+# OS
+.DS_Store
+Thumbs.db
