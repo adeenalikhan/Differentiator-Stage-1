@@ -161,4 +161,17 @@ and says so plainly when they don't.
 
 *(Filled in during the build. Each entry dated, tied to the research log.)*
 
-- _pending first discovery run_
+**[2026-07-28] Broke: "SEC Form ADV is the anchor" (§1.4).** I planned to anchor on ADV /
+family-office-exemption filers. First contact broke this on two counts: ADV isn't in
+EDGAR's full-text index (0 hits), and — the deeper error — SFOs that *use* the family-office
+exemption file no ADV at all, so the exemption I named as my best SFO signal actually
+guarantees the record is missing from ADV. The assumption was backwards.
+
+**[2026-07-28] Held, and better than expected: 13F-HR as the SFO vein (§1.2 belief).** My
+core belief was that SFOs are forced visible chiefly through regulation. That held — but the
+mechanism was Form 13F, not ADV. 893 13F filings mention "family office"; a first sample of
+~120 filings yielded 29 self-identified family-office filers including real SFOs
+(Duquesne/Druckenmiller, Louis-Dreyfus). 13F also hands me holdings as dated signals for
+free. Net: the belief survived, the named source did not — so ADV is demoted and 13F becomes
+the US anchor, with the explicit caveat that 13F misses SFOs filing under non-obvious names
+(Cascade, Bezos Expeditions), which I now owe to a separate reverse-discovery angle.
