@@ -92,3 +92,48 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
 - Decision: 53 UK candidates is enough raw material; do not over-mine a noisy source. Next:
   a genuinely different mechanism for hidden-name SFOs (press/known-family + conference
   rosters) and a Singapore slice for the "global" claim.
+
+### [2026-07-28] entity-enrichment — SEC 13F filing traversal
+- Goal: extract verified facts from each 13F filer's authoritative document.
+- Method: `pipeline/enrichment/sec_13f_traverse.py` fetches primary_doc.xml + information
+  table per candidate.
+- Result: **52/53 traversed.** Each now carries verified legal name, HQ address, a named
+  signatory + title + phone, portfolio value (as an explicit AUM FLOOR — 13(f) equities
+  only), position count, report quarter, and top holdings (dated signals). Surfaced a
+  non-US SFO (Marcuard, Zurich) filing 13F.
+- Honest finding: **most signatories are CCO/CFO/COO/GC, not the investment principal.**
+  E.g. Duquesne's 13F is signed by GC Sue Meng, but the decision-maker is Druckenmiller. So
+  the signatory is stored as a verified associated person + firm phone; the true investment
+  principal is resolved separately in principal enrichment. Not upgrading a compliance
+  signatory to "principal" is a deliberate honesty choice.
+
+### [2026-07-28] classification — UK Companies House profile + officers traversal
+- Goal: classify UK candidates against their actual filings, not their names.
+- Method: `pipeline/enrichment/uk_traverse.py` fetches each firm's profile (SIC codes) +
+  officers page (active directors).
+- Result of SIC-based pre-classification on 53 UK firms: **17 FO-relevant SIC** (fund mgmt
+  66300, financial holding 64205/64209, investment trusts 64301/64304 — Blu, Wedgwood,
+  Crew, Schwarz, Freedman...), **24 non-FO SIC** (property 68xxx, insurance 65xxx, legal
+  69xxx → likely rejects), **12 ambiguous**. Active officers captured as principal
+  candidates (e.g. Blu's founder Christian Armbrüster appears as a director). Did NOT
+  auto-assign a principal — UK FOs use corporate/nominee directors, so the real
+  decision-maker is chosen in enrichment.
+- Decision: realistic UK qualifying pool ~15-20, confirming the "expect heavy rejection"
+  prediction. UK name-search is noisy but the SIC filter makes the cut defensible and
+  evidence-based.
+
+### [2026-07-28] principal/contact — calibration research agent (running)
+- Goal: before scaling enrichment across ~100 firms, calibrate what is actually findable
+  under a free-only budget on 6 firms (Duquesne, Louis-Dreyfus, Boston, Callan, Arrowroot,
+  Custos), spanning SFO and MFO.
+- Method: a research agent instructed to return only strictly-sourced facts (URL per value),
+  identify the TRUE investment principal (not the 13F signatory), and NEVER pattern-generate
+  an email — published individual emails only, else honest "unresolved" with attempts. Writes
+  to `data/raw/enrichment/batch_cal.json`, ingested through `ingest_research.py`, which
+  enforces mechanical no-fabrication gates (drops generic mailboxes, non-/in/ LinkedIn URLs,
+  downgrades "verified" emails lacking a source).
+- Result: pending (agent running). Will review output critically before fanning out.
+- Manual calibration (me, not the pipeline) already confirmed: Duquesne = SFO, no website,
+  Druckenmiller principal, email likely unresolved; Louis-Dreyfus = SFO, disambiguated from
+  the Louis Dreyfus commodities company. These manual checks inform the agent instructions;
+  the shipped values will be pipeline-produced, not hand-typed.
