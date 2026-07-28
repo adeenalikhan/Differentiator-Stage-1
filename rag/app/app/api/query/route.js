@@ -3,7 +3,15 @@ import { retrieve, SUFFICIENCY, META } from "../../../lib/retrieval.js";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MODEL = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+// Currently-free OpenRouter models, tried in order (resilient to a slug being deprecated —
+// which is exactly how the first deploy failed). Override with OPENROUTER_MODEL.
+const MODELS = [
+  process.env.OPENROUTER_MODEL,
+  "openai/gpt-oss-20b:free",
+  "google/gemma-4-31b-it:free",
+  "nvidia/nemotron-nano-9b-v2:free",
+  "mistralai/mistral-7b-instruct:free",
+].filter(Boolean);
 
 // Compact, grounded view of a record for the model / extractive answer.
 function recordContext(r) {
@@ -52,32 +60,31 @@ async function llmAnswer(query, ordered) {
     + "(do not invent an email, phone, or name). If the records do not contain enough to answer, say you don't have "
     + "enough verified information rather than guessing. Never state a fact, number, or contact that is not in the records. "
     + "Keep it concise and practical: who to contact, why them, and why now.";
-  const body = {
-    model: MODEL, temperature: 0.2, max_tokens: 500,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: `QUESTION: ${query}\n\nRECORDS:\n${context}` },
-    ],
+  const messages = [
+    { role: "system", content: system },
+    { role: "user", content: `QUESTION: ${query}\n\nRECORDS:\n${context}` },
+  ];
+  const headers = {
+    Authorization: `Bearer ${key}`,
+    "Content-Type": "application/json",
+    "HTTP-Referer": "https://differentiator-stage-1-six.vercel.app",
+    "X-Title": "Family Office Intelligence",
   };
-  try {
-    const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://differentiator-stage-1-six.vercel.app",
-        "X-Title": "Family Office Intelligence",
-      },
-      body: JSON.stringify(body),
-    });
-    if (!resp.ok) {
-      const errTxt = (await resp.text()).slice(0, 240);
-      return { text: null, debug: `HTTP ${resp.status} (${MODEL}): ${errTxt}` };
-    }
-    const j = await resp.json();
-    const text = j.choices?.[0]?.message?.content?.trim() || null;
-    return { text, debug: text ? "ok" : `empty completion: ${JSON.stringify(j).slice(0, 200)}` };
-  } catch (e) { return { text: null, debug: `fetch error: ${String(e).slice(0, 160)}` }; }
+  let lastErr = "no models tried";
+  for (const model of MODELS) {
+    try {
+      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST", headers,
+        body: JSON.stringify({ model, temperature: 0.2, max_tokens: 500, messages }),
+      });
+      if (!resp.ok) { lastErr = `HTTP ${resp.status} (${model}): ${(await resp.text()).slice(0, 160)}`; continue; }
+      const j = await resp.json();
+      const text = j.choices?.[0]?.message?.content?.trim();
+      if (text) return { text, debug: `ok (${model})` };
+      lastErr = `empty completion (${model})`;
+    } catch (e) { lastErr = `fetch error (${model}): ${String(e).slice(0, 120)}`; }
+  }
+  return { text: null, debug: lastErr };
 }
 
 export async function POST(req) {
