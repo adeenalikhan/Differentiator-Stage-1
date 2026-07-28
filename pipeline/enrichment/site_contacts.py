@@ -38,10 +38,16 @@ def _name_tokens(full_name):
 
 def _match(email, tokens):
     local = email.split("@")[0].lower()
+    domain_root = email.split("@")[1].split(".")[0].lower()
     if local in GENERIC_EMAIL_LOCALPARTS:
         return False
-    # require a real name token (surname or given name) to appear in the local-part
-    return any(t in local for t in tokens if len(t) > 2)
+    local_tokens = [t for t in re.split(r"[._+-]+", local) if t]
+    # reject a firm mailbox (local-part == the firm's own domain name, e.g. timonier@timonier.com)
+    if local == domain_root or local_tokens == [domain_root]:
+        return False
+    # require WHOLE-token equality between a principal name token and a local-part token
+    # (>=3 chars) — prevents "tim" matching inside "timonier"
+    return any(t == lt for t in tokens if len(t) >= 3 for lt in local_tokens if len(lt) >= 3)
 
 
 def run():
