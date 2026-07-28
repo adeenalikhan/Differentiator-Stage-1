@@ -45,7 +45,7 @@ function extractiveAnswer(query, cands) {
 
 async function llmAnswer(query, ordered) {
   const key = process.env.OPENROUTER_API_KEY;
-  if (!key) return null; // fall back to extractive
+  if (!key) return { text: null, debug: "no OPENROUTER_API_KEY set" };
   const context = ordered.map((c, i) => `--- Record ${i + 1} ---\n${recordContext(c.record)}`).join("\n\n");
   const system = "You are a family-office intelligence assistant for a fund's investor-relations team. "
     + "Answer ONLY from the RECORDS provided. Cite the firm names you use. If a record lacks a contact, say so plainly "
@@ -62,13 +62,22 @@ async function llmAnswer(query, ordered) {
   try {
     const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://differentiator-stage-1-six.vercel.app",
+        "X-Title": "Family Office Intelligence",
+      },
       body: JSON.stringify(body),
     });
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      const errTxt = (await resp.text()).slice(0, 240);
+      return { text: null, debug: `HTTP ${resp.status} (${MODEL}): ${errTxt}` };
+    }
     const j = await resp.json();
-    return j.choices?.[0]?.message?.content?.trim() || null;
-  } catch { return null; }
+    const text = j.choices?.[0]?.message?.content?.trim() || null;
+    return { text, debug: text ? "ok" : `empty completion: ${JSON.stringify(j).slice(0, 200)}` };
+  } catch (e) { return { text: null, debug: `fetch error: ${String(e).slice(0, 160)}` }; }
 }
 
 export async function POST(req) {
@@ -94,8 +103,8 @@ export async function POST(req) {
 
   const ordered = edgeOrder(candidates.slice(0, 6));
   const llm = await llmAnswer(query, ordered);
-  const answer = llm || extractiveAnswer(query, candidates);
-  const mode = llm ? "llm-grounded" : "extractive-grounded";
+  const answer = llm.text || extractiveAnswer(query, candidates);
+  const mode = llm.text ? "llm-grounded" : "extractive-grounded";
 
   const sources = candidates.slice(0, 5).map((c) => ({
     firm: c.record.firm_common_name, type: c.record.fo_type,
@@ -108,8 +117,8 @@ export async function POST(req) {
     score: Math.round(c.score * 10) / 10,
   }));
 
-  log({ query, top, gate: "answer", mode, candidates: sources.map((s) => `${s.firm}:${s.score}`), ms: Date.now() - t0 });
-  return Response.json({ status: candidates.length ? "answer" : "partial", answer, mode, sources, filters, meta: META });
+  log({ query, top, gate: "answer", mode, llm: llm.debug, candidates: sources.map((s) => `${s.firm}:${s.score}`), ms: Date.now() - t0 });
+  return Response.json({ status: candidates.length ? "answer" : "partial", answer, mode, sources, filters, meta: META, _llm: llm.debug });
 }
 
 // Audit log — every retrieval call (query, scores, gate, mode, latency). Vercel captures stdout.

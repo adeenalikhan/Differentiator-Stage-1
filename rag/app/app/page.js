@@ -4,7 +4,7 @@ import { useState } from "react";
 const EXAMPLES = [
   "Single-family offices in Singapore",
   "Family offices investing in venture capital and technology",
-  "Who runs Bill Gates's family office and how do I reach them?",
+  "Who runs Jeff Bezos's family office and how do I reach them?",
   "US multi-family offices with a contactable principal",
   "Family offices with recent 2026 activity",
 ];

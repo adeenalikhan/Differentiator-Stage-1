@@ -12,6 +12,7 @@ const RECORDS = JSON.parse(readFileSync(join(dir, "..", "data", "records.json"),
 
 const STOP = new Set("the a an of in to for and or with on at is are be by from as into over your you who what which where how do does can me i we they them their his her show find list give".split(" "));
 const tok = (s) => (s.toLowerCase().match(/[a-z0-9]+/g) || []).filter((t) => !STOP.has(t) && t.length > 1);
+const ESTOP = new Set("family office offices capital partners group holdings management ventures venture investment investments invest advisors advisers fund funds llc ltd inc lp company co holding global services trust wealth private".split(" "));
 const DF = new Map();
 for (const r of RECORDS) for (const t of new Set(tok(r.search_text))) DF.set(t, (DF.get(t) || 0) + 1);
 const N = RECORDS.length, idf = (t) => Math.log(1 + (N - (DF.get(t) || 0) + 0.5) / ((DF.get(t) || 0) + 0.5));
@@ -23,7 +24,7 @@ function retrieve(q, k = 5) {
     const tf = new Map(); for (const t of tok(r.search_text)) tf.set(t, (tf.get(t) || 0) + 1);
     let s = 0; for (const t of qt) { const c = tf.get(t) || 0; if (c) s += idf(t) * (c / (c + 1.5)); }
     const eb = (r.family_affiliation + " " + r.firm_common_name + " " + r.principal_full_name).toLowerCase();
-    for (const t of qt) if (t.length > 2 && eb.includes(t)) s += 3;
+    for (const t of qt) if (t.length > 2 && !ESTOP.has(t) && eb.includes(t)) s += 3;
     if (sfo) s = r.fo_type === "SFO" ? s + 3 : s * 0.15;
     if (mfo) s = r.fo_type === "MFO" ? s + 3 : s * 0.15;
     for (const c of ["singapore", "united kingdom", "united states", "france", "germany", "denmark", "india", "australia", "canada", "hong kong", "switzerland"])

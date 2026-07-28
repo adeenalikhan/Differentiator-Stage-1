@@ -12,6 +12,10 @@ const COUNTRIES = ["united states", "usa", "us", "uk", "united kingdom", "britai
 const SECTORS = ["venture", "vc", "private equity", "real estate", "crypto", "hedge", "technology",
   "tech", "healthcare", "biotech", "energy", "public equit", "credit", "infrastructure"];
 const COUNTRY_CANON = { usa: "united states", us: "united states", britain: "united kingdom", uk: "united kingdom" };
+// generic words present in most firm names — never trigger the distinctive-entity boost
+const ENTITY_STOP = new Set(("family office offices capital partners group holdings management "
+  + "ventures venture investment investments invest advisors advisers fund funds llc ltd inc lp "
+  + "company co holding global services trust wealth private").split(" "));
 
 function tokenize(s) {
   return (s.toLowerCase().match(/[a-z0-9]+/g) || []).filter((t) => !STOP.has(t) && t.length > 1);
@@ -46,9 +50,10 @@ export function retrieve(query, k = 8) {
     for (const t of tokenize(r.search_text)) tf.set(t, (tf.get(t) || 0) + 1);
     let s = 0;
     for (const t of qt) { const c = tf.get(t) || 0; if (c) s += idf(t) * (c / (c + 1.5)); }
-    // strong boost for family / firm / principal name mentions (entity queries e.g. "Bill Gates")
+    // boost for DISTINCTIVE name mentions (entity queries e.g. "Bill Gates"), excluding the
+    // generic words that appear in most firm names (which would otherwise defeat the decline gate).
     const entityBlob = (r.family_affiliation + " " + r.firm_common_name + " " + r.principal_full_name).toLowerCase();
-    for (const t of qt) if (t.length > 2 && entityBlob.includes(t)) s += 3;
+    for (const t of qt) if (t.length > 2 && !ENTITY_STOP.has(t) && entityBlob.includes(t)) s += 3;
     // structured filters / boosts
     if (f.fo_type) s = r.fo_type === f.fo_type ? s + 3 : s * 0.15;
     for (const c of f.countries) { const cc = COUNTRY_CANON[c] || c; if ((r.hq_country || "").toLowerCase().includes(cc)) s += 4; }
