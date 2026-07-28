@@ -1,0 +1,116 @@
+import { retrieve, SUFFICIENCY, META } from "../../../lib/retrieval.js";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const MODEL = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+
+// Compact, grounded view of a record for the model / extractive answer.
+function recordContext(r) {
+  const contact = r.principal_email
+    ? `${r.principal_email} (${r.email_status})`
+    : r.principal_linkedin ? r.principal_linkedin
+    : r.principal_phone ? `${r.principal_phone} (firm line)`
+    : "no direct contact on file (private office)";
+  return [
+    `FIRM: ${r.firm_common_name} [${r.fo_type}]${r.family_affiliation ? " — " + r.family_affiliation : ""}`,
+    `LOCATION: ${[r.hq_city, r.hq_region, r.hq_country].filter(Boolean).join(", ")}`,
+    r.aum ? `AUM: ${r.aum}` : "",
+    r.investing_sectors ? `SECTORS/THESIS: ${r.investing_sectors}` : "",
+    `PRINCIPAL: ${r.principal_full_name || "—"}${r.principal_title ? ", " + r.principal_title : ""}`,
+    `CONTACT: ${contact}`,
+    r.signals ? `RECENT (dated): ${r.signals}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+// Edge-weighted ordering: most-relevant chunks at the START and END, weaker in the middle
+// ("lost in the middle"). candidates are already sorted best-first.
+function edgeOrder(cands) {
+  const front = [], back = [];
+  cands.forEach((c, i) => (i % 2 === 0 ? front.push(c) : back.unshift(c)));
+  return front.concat(back);
+}
+
+function extractiveAnswer(query, cands) {
+  const lines = cands.slice(0, 5).map((c, i) => {
+    const r = c.record;
+    const contact = r.principal_email || r.principal_linkedin || r.principal_phone || "no direct contact (private office)";
+    return `${i + 1}. ${r.firm_common_name} — ${r.fo_type}${r.family_affiliation ? ` (${r.family_affiliation})` : ""}, `
+      + `${r.hq_country}. Principal: ${r.principal_full_name || "—"}${r.principal_title ? ", " + r.principal_title : ""}. `
+      + `Contact: ${contact}.${r.signals ? " Recent: " + r.signals.split(".")[0] + "." : ""}`;
+  });
+  return `Here ${cands.length === 1 ? "is" : "are"} the closest ${Math.min(5, cands.length)} matching `
+    + `family ${cands.length === 1 ? "office" : "offices"} in the dataset:\n\n` + lines.join("\n\n");
+}
+
+async function llmAnswer(query, ordered) {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) return null; // fall back to extractive
+  const context = ordered.map((c, i) => `--- Record ${i + 1} ---\n${recordContext(c.record)}`).join("\n\n");
+  const system = "You are a family-office intelligence assistant for a fund's investor-relations team. "
+    + "Answer ONLY from the RECORDS provided. Cite the firm names you use. If a record lacks a contact, say so plainly "
+    + "(do not invent an email, phone, or name). If the records do not contain enough to answer, say you don't have "
+    + "enough verified information rather than guessing. Never state a fact, number, or contact that is not in the records. "
+    + "Keep it concise and practical: who to contact, why them, and why now.";
+  const body = {
+    model: MODEL, temperature: 0.2, max_tokens: 500,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: `QUESTION: ${query}\n\nRECORDS:\n${context}` },
+    ],
+  };
+  try {
+    const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) return null;
+    const j = await resp.json();
+    return j.choices?.[0]?.message?.content?.trim() || null;
+  } catch { return null; }
+}
+
+export async function POST(req) {
+  const t0 = Date.now();
+  let query = "";
+  try { ({ query } = await req.json()); } catch {}
+  query = (query || "").toString().slice(0, 400).trim();
+  if (!query) return Response.json({ status: "empty", message: "Please enter a question." }, { status: 400 });
+
+  const { candidates, top, filters } = retrieve(query, 8);
+
+  // Sufficiency gate — the working control: decline rather than answer weakly.
+  if (top < SUFFICIENCY || candidates.length === 0) {
+    log({ query, top, gate: "decline", filters, ms: Date.now() - t0 });
+    return Response.json({
+      status: "decline",
+      message: "I don't have a record in this dataset that confidently answers that. "
+        + "Try a family-office type (single/multi-family), a country, a sector (e.g. venture, real estate), "
+        + "or a specific family or firm name.",
+      meta: META,
+    });
+  }
+
+  const ordered = edgeOrder(candidates.slice(0, 6));
+  const llm = await llmAnswer(query, ordered);
+  const answer = llm || extractiveAnswer(query, candidates);
+  const mode = llm ? "llm-grounded" : "extractive-grounded";
+
+  const sources = candidates.slice(0, 5).map((c) => ({
+    firm: c.record.firm_common_name, type: c.record.fo_type,
+    family: c.record.family_affiliation, country: c.record.hq_country,
+    principal: c.record.principal_full_name, title: c.record.principal_title,
+    email: c.record.principal_email, email_status: c.record.email_status,
+    linkedin: c.record.principal_linkedin, phone: c.record.principal_phone,
+    aum: c.record.aum, signals: c.record.signals, tier: c.record.completeness_tier,
+    basis: c.record.is_fo_evidence, proof: c.record.fo_proof_strength,
+    score: Math.round(c.score * 10) / 10,
+  }));
+
+  log({ query, top, gate: "answer", mode, candidates: sources.map((s) => `${s.firm}:${s.score}`), ms: Date.now() - t0 });
+  return Response.json({ status: candidates.length ? "answer" : "partial", answer, mode, sources, filters, meta: META });
+}
+
+// Audit log — every retrieval call (query, scores, gate, mode, latency). Vercel captures stdout.
+function log(o) { try { console.log("[RAG]", JSON.stringify(o)); } catch {} }
