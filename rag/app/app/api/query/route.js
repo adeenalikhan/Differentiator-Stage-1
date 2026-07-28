@@ -2,6 +2,10 @@ import { retrieve, SUFFICIENCY, META } from "../../../lib/retrieval.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 25; // allow headroom; we still self-cap the LLM below
+
+const LLM_BUDGET_MS = 8500; // hard cap on total LLM time -> else serve instant extractive answer
+const PER_CALL_MS = 7000;
 
 // Currently-free OpenRouter models, tried in order (resilient to a slug being deprecated —
 // which is exactly how the first deploy failed). Override with OPENROUTER_MODEL.
@@ -71,19 +75,26 @@ async function llmAnswer(query, ordered) {
     "HTTP-Referer": "https://differentiator-stage-1-six.vercel.app",
     "X-Title": "Family Office Intelligence",
   };
+  const start = Date.now();
   let lastErr = "no models tried";
   for (const model of MODELS) {
+    const left = LLM_BUDGET_MS - (Date.now() - start);
+    if (left < 1500) { lastErr = "llm budget exhausted -> extractive fallback"; break; }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.min(PER_CALL_MS, left));
     try {
       const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST", headers,
+        method: "POST", headers, signal: controller.signal,
         body: JSON.stringify({ model, temperature: 0.2, max_tokens: 500, messages }),
       });
-      if (!resp.ok) { lastErr = `HTTP ${resp.status} (${model}): ${(await resp.text()).slice(0, 160)}`; continue; }
+      if (!resp.ok) { lastErr = `HTTP ${resp.status} (${model}): ${(await resp.text()).slice(0, 140)}`; continue; }
       const j = await resp.json();
       const text = j.choices?.[0]?.message?.content?.trim();
-      if (text) return { text, debug: `ok (${model})` };
+      if (text) return { text, debug: `ok (${model}, ${Date.now() - start}ms)` };
       lastErr = `empty completion (${model})`;
-    } catch (e) { lastErr = `fetch error (${model}): ${String(e).slice(0, 120)}`; }
+    } catch (e) {
+      lastErr = String(e).includes("abort") ? `timeout (${model})` : `fetch error (${model}): ${String(e).slice(0, 100)}`;
+    } finally { clearTimeout(timer); }
   }
   return { text: null, debug: lastErr };
 }

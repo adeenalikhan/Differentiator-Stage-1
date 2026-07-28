@@ -175,3 +175,54 @@ mechanism was Form 13F, not ADV. 893 13F filings mention "family office"; a firs
 free. Net: the belief survived, the named source did not — so ADV is demoted and 13F becomes
 the US anchor, with the explicit caveat that 13F misses SFOs filing under non-obvious names
 (Cascade, Bezos Expeditions), which I now owe to a separate reverse-discovery angle.
+
+**[2026-07-28→29] The SFO/MFO reality, and how the file's shape emerged.** Enrichment (via
+research agents returning strictly-sourced JSON, gated by `ingest_research.py`) confirmed the
+prediction in §1.5: "X Family Office" 13F filers are mostly *registered multi-family offices*,
+not SFOs; genuine unregistered SFOs are rare in that vein. So the SFO count had to come from a
+different mechanism — press/known-individual discovery (Cascade, Bezos, Dell, Soros, Bloomberg,
+LEGO, L'Oréal, Chanel…) and a Singapore/APAC registry-and-press pass (Dyson, Dalio, UOB, Nippon
+Paint…). Net final composition: 50 records across **four independent discovery classes**
+(sec-13f 17 · press 17 · uk 8 · apac 8; max 34%), **34 SFO / 15 MFO / 1 Undetermined**, 10
+countries.
+
+**[2026-07-28→29] Constraints that shaped the method, honestly.** Two forces bent the plan:
+(1) a free-only budget with no paid enrichment/verifier, and (2) repeated usage-limit throttling
+that killed model-based research agents mid-run. The response was to lean on **deterministic,
+non-model enrichment via direct government APIs** (SEC 13F signature blocks, SEC IAPD adviser
+registration, UK Companies House SIC + officers + PSC) — none of which consumes model budget —
+for classification, phones, and firm proof, reserving scarce model calls for the judgement-heavy
+work (principal identification, published-email discovery). A recursive agent-delegation failure
+(agents spawning agents, ~250k tokens for zero output) is logged in the research log as a real
+cost and lesson.
+
+**[2026-07-29] Contact strategy, and the email asymmetry.** A review flagged that every verified
+email sat on an MFO. That is structural, not a defect — SFOs don't publish individual emails, and
+fabricating one is disqualifying. Rather than shrug, we maximised the *other* legitimate SFO
+channels: verified firm **phones** from 13F signature blocks, and a **LinkedIn pass that replaced
+billionaire figureheads with the reachable investment executives** (Cascade→Larson, Soros→
+Fitzpatrick, Willett→Rattner, Dell→Lemkau, Weybourne→Simpson…). SFO reachability rose from ~12 to
+27 of 34; overall 43/50 carry a direct channel; every record carries a named principal + dated
+2026 signals.
+
+**[2026-07-29] RAG, and testing the answer layer.** Built keyless retrieval (structured + lexical,
+validated in `rag/prototype.py`) + a free-OpenRouter grounded answer layer with a sufficiency gate
+and an extractive fallback that cannot hallucinate. Live-testing the deployed system caught real
+bugs — a deprecated free-model slug (fixed with a fallback list), an entity-name boost that broke
+the decline gate on generic words, a markdown-table format the UI mis-rendered — all fixed and
+re-verified against the live URL (see `rag/app/README.md`).
+
+### Part 2 — Material blind spots that remain (stated, not hidden)
+- **Contact completeness is uneven.** 7/50 verified individual emails; 43/50 have *some* channel.
+  The prestigious private SFOs (Bezos, Tethys/Bettencourt, Dyson, several Singapore) carry a named
+  principal + signals but no direct contact — honest, documented gaps, not fabricated fills.
+- **US-weighting.** 26/50 US. The global slice is real (UK/Europe/Asia/Australia/Canada) but the
+  US is over-represented because SEC filings are uniquely rich and free.
+- **13F equity values are floors,** not total AUM, and are labelled as such; some AUM cells are
+  press estimates with dates.
+- **Some principal LinkedIn matches are "unconfirmed"** (Bayshore, Bezos) and labelled so; a couple
+  of phones are sourced from older filings (Willett's 2014 13F) and flagged.
+- **A larger discovered pool (71 qualified) exceeds the 50** under the source cap; 21 qualified
+  records sit in reserve rather than being forced in past the single-source ceiling.
+- **Free-only tooling caps email verification** at "published/attested" — no paid enrichment means
+  no provider-returned coverage for the harder SFOs.
