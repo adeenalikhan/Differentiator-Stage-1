@@ -47,6 +47,9 @@ def verify_emails():
         status = (r.get("email_status") or "").strip()
         if not email:
             continue
+        # already confirmed at source today (e.g. by the site-contact harvester) -> trust it
+        if r.get("last_validated") == TODAY and status == "verified":
+            continue
         checked += 1
         local = email.split("@")[0].lower()
         # remove generic / blocked-status from customer field
