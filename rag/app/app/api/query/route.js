@@ -59,7 +59,8 @@ async function llmAnswer(query, ordered) {
     + "Answer ONLY from the RECORDS provided. Cite the firm names you use. If a record lacks a contact, say so plainly "
     + "(do not invent an email, phone, or name). If the records do not contain enough to answer, say you don't have "
     + "enough verified information rather than guessing. Never state a fact, number, or contact that is not in the records. "
-    + "Keep it concise and practical: who to contact, why them, and why now.";
+    + "Keep it concise and practical: who to contact, why them, and why now. "
+    + "Write in short prose and simple bullet lines (start bullets with '- '); do NOT use markdown tables.";
   const messages = [
     { role: "system", content: system },
     { role: "user", content: `QUESTION: ${query}\n\nRECORDS:\n${context}` },
@@ -125,7 +126,7 @@ export async function POST(req) {
   }));
 
   log({ query, top, gate: "answer", mode, llm: llm.debug, candidates: sources.map((s) => `${s.firm}:${s.score}`), ms: Date.now() - t0 });
-  return Response.json({ status: candidates.length ? "answer" : "partial", answer, mode, sources, filters, meta: META, _llm: llm.debug });
+  return Response.json({ status: candidates.length ? "answer" : "partial", answer, mode, sources, filters, meta: META });
 }
 
 // Audit log — every retrieval call (query, scores, gate, mode, latency). Vercel captures stdout.

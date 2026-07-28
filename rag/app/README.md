@@ -55,4 +55,24 @@ source records it was built from. Answers never assert facts the records don't s
   add per-answer citation highlighting; log to a store rather than stdout.
 
 ## Live queries run against the deployed system
-_(filled in after deploy — the actual queries used to reach the conclusions above)_
+Run against https://differentiator-stage-1-six.vercel.app on 2026-07-29 (mode: `llm-grounded`,
+model `openai/gpt-oss-20b:free`). These are the actual queries used to validate the answer layer:
+
+1. **"single-family offices in Singapore investing in technology"** → answered with Weybourne
+   (Dyson) and other Singapore SFOs, each with its tech thesis, dated activity, and contact.
+   Retrieval correctly filtered to SFO + Singapore.
+2. **"who runs Jeff Bezos's family office and how do I reach them"** → *"Bezos Expeditions —
+   Principal: Melinda Lewison, Managing Director — LinkedIn: …"*, citing Record 1. Correctly
+   returns the reachable professional, not the figurehead; no invented email.
+3. **"US multi-family offices with a verified email contact"** → *"Pioneer Family Office —
+   verified email avin@piowealth.com"*. Surfaces a record whose email is actually verified.
+4. **"family offices in Brazil"** → **declined**: "I don't have a record in this dataset that
+   confidently answers that…". The sufficiency gate fired instead of fabricating — the key
+   answer-layer test.
+
+**Conclusions from these runs:** retrieval surfaces the right records for type/geo/sector and
+entity-name queries; the answer layer stays within the records (no invented contacts, cites
+records); and thin-evidence queries decline rather than hallucinate. Bugs found and fixed via
+this live testing: a deprecated free model slug (added a resilient fallback list), an
+entity-name boost that defeated the decline gate on generic words, and a markdown-table answer
+format that the plain-text UI rendered as raw pipes.
