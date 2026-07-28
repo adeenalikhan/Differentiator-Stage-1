@@ -197,3 +197,47 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   re-run after reset.
 - State at pause: 106 discovered+traversed; 14 qualified (8 SFO / 5 MFO / 1 Undetermined),
   2 verified individual emails; 3 rejected; 89 pending enrichment.
+
+### [2026-07-28→29] enrichment scale-up (research agents, sequential/parallel)
+- Registered-13F batches (reg1/reg2/reg3, ~22 firms): confirmed MFO status vs adviserinfo
+  client base; identified true principals; verified emails at source for Callan, Custos, CVA,
+  Collective, Pioneer, Stenger. "Family Office Research LLC" flagged INSUFFICIENT (branding
+  wealth-manager, not an FO) -> rejected. Result: 24 qualified.
+- Deterministic false-positive cull: 22 sec-13f matches that contained "family office" only in
+  holdings text (Bank of Montreal, AQR, Lido, Orion, Geller Advisors...) rejected to audit.
+- Site-contact harvester (`site_contacts.py`, free urllib): pulls published mailto individual
+  emails from firms' own pages; matched Stenger. Caught + removed a false match
+  (`timonier@timonier.com`, a firm-name mailbox — "tim" inside "timonier") by requiring
+  whole-token name equality and rejecting firm-name mailboxes.
+- Hidden-name SFO discovery (press): +11 marquee SFOs (Dell/DFO, Brin/Bayshore, Schmidt/
+  Hillspire, Tsai/Blue Pool, Chanel/Mousse, LEGO/KIRKBI, L'Oreal/Tethys, C&A/COFRA, Strungmann/
+  Athos, Wipro/Premji, Infosys/Catamaran). Batch 2: +10 (Cascade/Gates, Bezos, Soros, Willett/
+  Bloomberg, Pritzker, Arnault/Agache, Hartono, Grok/Cannon-Brookes, Woodbridge/Thomson, Hong
+  Leong/Kwek). 7 countries; no fabricated emails.
+- Singapore/APAC (press+registry): +9 (Dyson/Weybourne, Dalio, Haidilao/Sunrise, Tsao, UOB/Wee,
+  Saverin/EE, Farro MFO, Tolaram/Maitri, Nippon/Wuthelam). UK-d: +2 SFOs (Old House, Frigus),
+  3 insufficient rejected.
+- Data-integrity fix: 13F portfolio values were mis-scaled (SEC switched thousands->whole
+  dollars in 2023); normalized by plausibility so a small FO no longer showed "$969B".
+- Result: **50 qualified in the final file** (17 sec-13f / 17 press / 8 uk / 8 apac; 34 SFO /
+  15 MFO / 1 Undet), 71 qualified in the store.
+
+### [2026-07-29] principal reachability — SFO 13F phones + LinkedIn pass
+- 13F signature-block phones added to Dell/DFO, Blue Pool, Willett, Soros (verified firm lines;
+  Willett's from a 2014 filing, flagged).
+- LinkedIn pass (2 agents): replaced billionaire figureheads with the reachable investment
+  executives + individual /in/ profiles (Cascade->Larson, Soros->Fitzpatrick, Willett->Rattner,
+  Dell->Lemkau, Hillspire->Goldman, Pritzker->Gleberman, Blue Pool->Weisberg, Weybourne->Simpson,
+  Dalio SG->Tan Mae Shen, Tsao->Bryan Goh...). Honest "unconfirmed" flags on Bayshore/Bezos.
+  SFO reachability 12->27 of 34; overall 43/50 carry a direct channel.
+
+### [2026-07-29] rag — build + LIVE answer-layer testing
+- Built keyless retrieval (structured+lexical, validated in `rag/prototype.py`) + free-OpenRouter
+  grounded answer layer + sufficiency-gate decline + extractive fallback. Deployed to Vercel:
+  https://differentiator-stage-1-six.vercel.app
+- Live testing found + fixed real bugs: (1) framework mis-detection (missing public/ dir) ->
+  vercel.json framework=nextjs; (2) deprecated free model slug (llama-3.3:free now paid) ->
+  resilient model fallback list; (3) entity-name boost matched generic "family"/"office" and
+  broke the decline gate -> ENTITY_STOP whole-token match; (4) markdown-table answers mis-rendered
+  -> prose prompt; (5) slow free-model queuing hung the function -> 8.5s LLM budget + abort ->
+  instant extractive fallback. Live queries + conclusions recorded in `rag/app/README.md`.
