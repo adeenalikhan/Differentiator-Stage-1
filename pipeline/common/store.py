@@ -107,6 +107,22 @@ def update_by_record_id(record_id: str, rec: Record, status: Optional[str] = Non
     return key
 
 
+def set_fields(record_id: str, **fields):
+    """Partial update of ONLY the named columns for a record_id. Use this for status/tier/
+    validation updates so dataclass defaults can never clobber real values."""
+    cols = [c for c in fields if c in _RECORD_COLS or c == "status"]
+    if not cols:
+        return
+    con = connect()
+    row = con.execute("SELECT 1 FROM candidates WHERE record_id=?", (record_id,)).fetchone()
+    if not row:
+        con.close(); return
+    sets = ", ".join(f'"{c}"=?' for c in cols)
+    con.execute(f"UPDATE candidates SET {sets} WHERE record_id=?",
+                [fields[c] for c in cols] + [record_id])
+    con.commit(); con.close()
+
+
 def audit(dedup_key: str, firm: str, field: str, value: str, reason: str, ts: str = "2026-07-28"):
     con = connect()
     con.execute("INSERT INTO audit (ts,dedup_key,firm,field,value,reason) VALUES (?,?,?,?,?,?)",

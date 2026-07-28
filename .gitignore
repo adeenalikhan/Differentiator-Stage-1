@@ -23,3 +23,6 @@ pipeline/**/.cache/
 # OS
 .DS_Store
 Thumbs.db
+
+# regenerable intermediate DB (pipeline rebuilds it)
+data/pipeline.db

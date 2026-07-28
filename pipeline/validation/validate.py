@@ -53,9 +53,7 @@ def verify_emails():
         if local in GENERIC_EMAIL_LOCALPARTS or status in {"invalid", "undeliverable"}:
             store.audit(r["dedup_key"], r["firm_legal_name"], "principal_email", email,
                         f"removed from customer field (status={status or 'generic'})")
-            store.update_by_record_id(r["record_id"], Record(record_id=r["record_id"],
-                                      principal_email="", email_status="unresolved",
-                                      caveats=r.get("caveats", "")))
+            store.set_fields(r["record_id"], principal_email="", email_status="unresolved")
             removed += 1
             continue
         src = (r.get("email_source") or "").strip()
@@ -65,14 +63,12 @@ def verify_emails():
             continue
         present = _email_on_page(email, url.group(0).rstrip('.,);'))
         if present is True:
-            store.update_by_record_id(r["record_id"], Record(record_id=r["record_id"],
-                                      email_status="verified", last_validated=TODAY))
+            store.set_fields(r["record_id"], email_status="verified", last_validated=TODAY)
             confirmed += 1
         elif present is False:
             store.audit(r["dedup_key"], r["firm_legal_name"], "principal_email", email,
                         f"email not found at cited source on re-fetch ({url.group(0)}); downgraded verified->unverified")
-            store.update_by_record_id(r["record_id"], Record(record_id=r["record_id"],
-                                      email_status="unverified", last_validated=TODAY))
+            store.set_fields(r["record_id"], email_status="unverified", last_validated=TODAY)
             downgraded += 1
         else:
             unreachable += 1  # left as-is
@@ -81,22 +77,29 @@ def verify_emails():
 
 
 def qualify_and_tier():
+    """Three outcomes, honestly separated:
+      qualified            — enriched AND affirmative FO evidence (counts toward 50)
+      rejected             — enriched AND actively disproven (insufficient evidence / not an FO)
+      pending-enrichment   — not yet researched; NOT a rejection, just not done
+    """
     cands = store.all_candidates()
-    q = rej = 0
+    q = rej = pending = 0
     for r in cands:
+        enriched = bool((r.get("fo_proof_strength") or "").strip() or (r.get("is_fo_evidence") or "").strip())
+        if not enriched:
+            store.set_fields(r["record_id"], status="pending-enrichment")
+            pending += 1
+            continue
         ok, reason = qualify_firm(r)
         if ok:
-            store.update_by_record_id(r["record_id"], Record(record_id=r["record_id"]),
-                                      status="qualified")
+            store.set_fields(r["record_id"], status="qualified")
             q += 1
         else:
             store.audit(r["dedup_key"], r["firm_legal_name"], "firm-qualification", "", reason)
-            store.update_by_record_id(r["record_id"], Record(record_id=r["record_id"]),
-                                      status="rejected")
+            store.set_fields(r["record_id"], status="rejected")
             rej += 1
-        tier = completeness_tier(r)
-        store.update_by_record_id(r["record_id"], Record(record_id=r["record_id"], completeness_tier=tier))
-    print(f"Qualification: qualified={q} rejected={rej}")
+        store.set_fields(r["record_id"], completeness_tier=completeness_tier(r))
+    print(f"Qualification: qualified={q} rejected={rej} pending-enrichment={pending}")
 
 
 if __name__ == "__main__":

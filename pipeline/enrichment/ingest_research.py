@@ -75,6 +75,10 @@ def ingest():
         if isinstance(data, dict):
             data = [data]
         for obj in data:
+            # coerce list-valued fields (some agents return arrays) to strings
+            for k, v in list(obj.items()):
+                if isinstance(v, list):
+                    obj[k] = "; ".join(str(x) for x in v)
             rid = obj.get("record_id", "")
             firm = obj.get("firm_legal_name", rid)
             # find existing candidate by record_id
