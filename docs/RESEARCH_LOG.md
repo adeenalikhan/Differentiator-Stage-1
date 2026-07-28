@@ -177,3 +177,23 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   tool; do not spawn or wait on sub-agents" instruction at the top, and (2) batches capped at
   6. Recorded here rather than hidden — it's a real cost and a real lesson about orchestrating
   research agents.
+
+### [2026-07-28] usage limit + pivot to deterministic enrichment
+- Mid-run we hit the account usage limit (resets ~07:40 Asia/Karachi); the model-based
+  research agents failed with API errors. Key realization: direct HTTP calls (urllib to SEC
+  EDGAR, Companies House, SEC IAPD) are NOT model calls and do not consume that budget.
+- Pivot: enrich the pending SEC-13F set deterministically via the SEC IAPD adviser API.
+  Signal: a firm that files a 13F but has NO adviser registration essentially must rely on the
+  single-family-office exemption (rule 202(a)(11)(G)-1) -> strong SFO signal; a registered
+  adviser serves clients -> MFO-vs-FO left to the research pass (avoids mislabeling a wealth
+  manager / research firm as a family office).
+- Result across 47 pending 13F candidates: **35 registered advisers** (verified CRD/SEC#/
+  address added; left pending), **2 unregistered -> qualified SFO** (Intrepid, Kopp; family
+  not yet named — flagged), **10 ambiguous** (left pending). IAPD firm-detail endpoint is
+  gated (HTTP 403), so the search API (registration + address) is the usable signal.
+- Honest read: pure unregistered SFOs filing 13F are RARE — most "X Family Office" 13F filers
+  are registered MFOs. This is why SFO count grows slowly and why press/hidden-name SFO
+  discovery matters; that agent was stopped by the limit before writing output and must be
+  re-run after reset.
+- State at pause: 106 discovered+traversed; 14 qualified (8 SFO / 5 MFO / 1 Undetermined),
+  2 verified individual emails; 3 rejected; 89 pending enrichment.

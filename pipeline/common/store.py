@@ -123,6 +123,13 @@ def set_fields(record_id: str, **fields):
     con.commit(); con.close()
 
 
+def upsert_raw(record_id: str, raw: dict):
+    """Replace the raw JSON payload for a record."""
+    con = connect()
+    con.execute("UPDATE candidates SET raw=? WHERE record_id=?", (json.dumps(raw), record_id))
+    con.commit(); con.close()
+
+
 def audit(dedup_key: str, firm: str, field: str, value: str, reason: str, ts: str = "2026-07-28"):
     con = connect()
     con.execute("INSERT INTO audit (ts,dedup_key,firm,field,value,reason) VALUES (?,?,?,?,?,?)",
