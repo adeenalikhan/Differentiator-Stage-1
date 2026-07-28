@@ -83,8 +83,13 @@ def qualify_and_tier():
       pending-enrichment   — not yet researched; NOT a rejection, just not done
     """
     cands = store.all_candidates()
-    q = rej = pending = 0
+    q = rej = pending = held = 0
     for r in cands:
+        # preserve an explicit prior rejection (e.g. deterministic false-positive cull);
+        # do not let "no evidence yet" resurrect it to pending.
+        if r.get("status") == "rejected":
+            held += 1
+            continue
         enriched = bool((r.get("fo_proof_strength") or "").strip() or (r.get("is_fo_evidence") or "").strip())
         if not enriched:
             store.set_fields(r["record_id"], status="pending-enrichment")
