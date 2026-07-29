@@ -199,7 +199,7 @@ cost and lesson.
 **[2026-07-29] Contact strategy, and the email asymmetry.** A review flagged that every verified
 email sat on an MFO. That is structural, not a defect — SFOs don't publish individual emails, and
 fabricating one is disqualifying. Rather than shrug, we maximised the *other* legitimate SFO
-channels: verified firm **phones** from 13F signature blocks, and a **LinkedIn pass that replaced
+channels: source-attested firm **phones** from 13F signature blocks (from the filing, not independently dialed), and a **LinkedIn pass that replaced
 billionaire figureheads with the reachable investment executives** (Cascade→Larson, Soros→
 Fitzpatrick, Willett→Rattner, Dell→Lemkau, Weybourne→Simpson…). SFO reachability rose from ~12 to
 27 of 34; overall 43/50 carry a direct channel; every record carries a named principal + dated

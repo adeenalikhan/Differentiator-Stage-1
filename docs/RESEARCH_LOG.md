@@ -223,7 +223,7 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   15 MFO / 1 Undet), 71 qualified in the store.
 
 ### [2026-07-29] principal reachability — SFO 13F phones + LinkedIn pass
-- 13F signature-block phones added to Dell/DFO, Blue Pool, Willett, Soros (verified firm lines;
+- 13F signature-block phones added to Dell/DFO, Blue Pool, Willett, Soros (source-attested firm lines from the filing, not independently dialed;
   Willett's from a 2014 filing, flagged).
 - LinkedIn pass (2 agents): replaced billionaire figureheads with the reachable investment
   executives + individual /in/ profiles (Cascade->Larson, Soros->Fitzpatrick, Willett->Rattner,
