@@ -241,3 +241,70 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   broke the decline gate -> ENTITY_STOP whole-token match; (4) markdown-table answers mis-rendered
   -> prose prompt; (5) slow free-model queuing hung the function -> 8.5s LLM budget + abort ->
   instant extractive fallback. Live queries + conclusions recorded in `rag/app/README.md`.
+
+---
+
+### Enrichment & verification SERVICES attempted — and paths deliberately NOT pursued
+
+**Services actually used (and what each produced):**
+- **SEC EDGAR** (13F-HR full-text + `data.sec.gov` submissions + `primary_doc.xml`) — discovery,
+  legal name, HQ, AUM floor, holdings signals, signature-block phone. Free, no key.
+- **SEC IAPD adviser API** (`api.adviserinfo.sec.gov/search/firm`) — SFO-vs-MFO signal (registered
+  vs exempt), CRD/SEC#, office address. Free. Firm-detail endpoint gated (HTTP 403) — not usable.
+- **UK Companies House public site** — profile/SIC, officers, PSC (controlling family). Free.
+- **Web research agents** (WebSearch/WebFetch) — firm sites, press, LinkedIn search snippets.
+- **Site-contact harvester** (`site_contacts.py`, urllib) — published `mailto:` individual emails.
+
+**Enrichment services deliberately NOT pursued, and why:**
+- **Apollo / Hunter / RocketReach / Prospeo / Clay free tiers** — planned in §1.4, then rejected as
+  a *source of shipped contacts*. Their free outputs are broker-inferred or masked (`g***@firm.com`,
+  RocketReach listings), which the brief disqualifies (not attested to the named person). Using them
+  risked shipping pattern-guessed emails dressed as data. Decision: rely on PUBLISHED individual
+  emails (self-attesting) and label everything else honestly. Where agents *encountered* such results
+  (Boston, Arrowroot, Wealthgate, PMG, Schwarz) they were explicitly **excluded** — logged above.
+- **Paid enrichment (FINTRX / PitchBook / Bloomberg Terminal)** — out of budget (free-only).
+
+**Verification services deliberately NOT pursued, and why:**
+- **Paid email verifiers (NeverBounce / ZeroBounce / MillionVerifier)** — paid; not used.
+- **SMTP / deliverability checks** — deliberately NOT used as the ownership control: deliverability
+  confirms a mailbox *exists*, not *whose* it is (brief's explicit warning). Our email verification is
+  **source re-fetch** (confirm the address is published on the cited page) — stronger for ownership.
+
+**Discovery paths deliberately NOT pursued, and why:**
+- **SEC Form D** (261 phrase matches, probed) — not harvested. Form D issuers are fund *vehicles*,
+  not the FO entity, and related-persons skew to counsel/administrators -> lower precision than 13F.
+  Left as a documented next-round lever.
+- **Conference / event rosters** (Campden, iConnections, Opal) — in the plan, not mined. The press +
+  registry angles already produced the SFO count with primary-source confirmation; rosters need heavy
+  per-name verification for marginal gain. Documented, not done.
+- **Automated LinkedIn scraping** — not attempted (ToS + anti-bot). Individual `/in/` profiles were
+  matched via public search snippets instead, and labelled `unconfirmed` where the snippet didn't
+  confirm person+firm+role (Bayshore, Bezos).
+
+### How the FINAL principal / LinkedIn / email / verification claims were validated
+- **Principal:** must be a *current* decision-maker with evidence. 13F signatories (compliance/ops)
+  were NOT upgraded to principal; billionaire figureheads were replaced by the reachable investment
+  lead (CIO/CEO) where the family principal isn't operationally reachable.
+- **LinkedIn:** individual `/in/` URL only; company/search/`/pub` pages rejected at ingest
+  (`ingest_research.py`); matched to person+firm+role via the source snippet; unconfirmed labelled.
+- **Email:** only PUBLISHED/attested addresses ship. The release-gating validator
+  (`pipeline/validation/validate.py`) **re-fetches the cited source and confirms the address literally
+  appears there** before `verified` — Callan, Custos, CVA, Collective, Pioneer, Stenger were all
+  re-confirmed at source. Generic/broker/pattern addresses -> dropped to the audit sheet. A false
+  auto-match (`timonier@timonier.com`) was caught and removed.
+- **"Contact unavailable" is never bare:** every unresolved contact carries its documented attempts in
+  the dataset's `email_basis` / `caveats` columns (e.g. "no firm website; searched team page, filings,
+  press; no published individual email; broker results excluded").
+
+### Which sources ULTIMATELY produced the usable information (by phase)
+- **Discovery:** SEC 13F-HR (US anchor) · press/known-individual (hidden-name SFOs) · UK Companies
+  House · Singapore/APAC press+registry.
+- **Entity:** SEC 13F cover (name/HQ/AUM-floor) · IAPD (type + address) · CH SIC+PSC (UK type +
+  controlling family) · firm sites + press (thesis/AUM/corporate LinkedIn).
+- **Principal:** firm team pages + press (the professional decision-maker) · CH officers/PSC (UK) ·
+  LinkedIn search (the `/in/` profile).
+- **Contact:** firm team/contact pages -> the 7 verified emails · 13F signature blocks -> firm phones ·
+  LinkedIn -> `/in/` profiles. **Free-tier enrichment services produced nothing usable** (excluded as
+  broker-inferred).
+- **Signal:** 13F holdings + report dates (US filers) · press (recent deals/hires/appointments) for the
+  rest.
