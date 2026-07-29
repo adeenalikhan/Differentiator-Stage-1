@@ -213,7 +213,8 @@ the decline gate on generic words, a markdown-table format the UI mis-rendered �
 re-verified against the live URL (see `rag/app/README.md`).
 
 ### Part 2 — Material blind spots that remain (stated, not hidden)
-- **Contact completeness is uneven.** 7/50 verified individual emails; 43/50 have *some* channel.
+- **Contact completeness is uneven.** 6/50 verified individual emails (a 7th record carries an
+  email honestly labelled `unverified`); 43/50 have *some* channel.
   The prestigious private SFOs (Bezos, Tethys/Bettencourt, Dyson, several Singapore) carry a named
   principal + signals but no direct contact — honest, documented gaps, not fabricated fills.
 - **US-weighting.** 26/50 US. The global slice is real (UK/Europe/Asia/Australia/Canada) but the

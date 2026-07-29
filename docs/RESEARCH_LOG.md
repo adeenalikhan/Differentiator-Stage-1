@@ -303,7 +303,7 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   controlling family) · firm sites + press (thesis/AUM/corporate LinkedIn).
 - **Principal:** firm team pages + press (the professional decision-maker) · CH officers/PSC (UK) ·
   LinkedIn search (the `/in/` profile).
-- **Contact:** firm team/contact pages -> the 7 verified emails · 13F signature blocks -> firm phones ·
+- **Contact:** firm team/contact pages -> the 6 verified emails (+1 labelled unverified) · 13F signature blocks -> firm phones ·
   LinkedIn -> `/in/` profiles. **Free-tier enrichment services produced nothing usable** (excluded as
   broker-inferred).
 - **Signal:** 13F holdings + report dates (US filers) · press (recent deals/hires/appointments) for the
