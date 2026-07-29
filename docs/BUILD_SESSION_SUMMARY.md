@@ -2,8 +2,8 @@
 
 ## 1. Approximate build time
 
-Roughly 9 to 10 hours of active work across four sessions,
-spanning 07-28 03:00 to 07-29 19:00 within the 48-hour window. The long gaps between sessions
+Roughly 10 to 11 hours of active work across five sessions,
+spanning 07-28 03:00 to 07-29 21:00 within the 48-hour window. The long gaps between sessions
 were usage-limit pauses and overnight, not work.
 
 ## 2. Main work sessions
@@ -15,7 +15,10 @@ registered-13F batches, and hidden-name SFO discovery, reaching 50 qualified fir
 3. 07-29 early (\~3h): the balanced final 50 (Singapore slice, 13F phones, a LinkedIn pass that
 swapped figureheads for reachable executives), the full Micro-RAG build, Vercel deploy, and
 fixes found by testing the live system.
-4. 07-29 later (\~0.5h): line-by-line audits of each deliverable against the brief, plus Task 2.
+4. 07-29 later (\~1.5h): line-by-line reconciliation audits of every deliverable against the
+brief, and the Task 2 conversion analysis.
+5. 07-29 evening (\~1h): submission packaging (email, AI-session transcript, RAG documentation
+note) and abuse-protection hardening for the live URL, documented honestly after testing.
 
 ## 3. Major components: what the AI produced vs. what I changed or decided
 
@@ -34,4 +37,9 @@ off-topic questions is correct scope behavior, not a bug.
 * Audits: I asked for each deliverable to be checked against the brief line by line, which
 surfaced real corrections, including a "7 verified emails" over-count (actually 6 plus 1
 unverified) and a RAG design doc that overclaimed versus the shipped app.
+* Security: I raised locking down the live URL. I kept it open, because the brief requires a
+reviewer-reachable customer URL, and added abuse/discovery protection instead (noindex, input
+caps, a best-effort per-IP rate limit). Testing showed Vercel's per-instance scaling bypasses
+the in-memory limit, so I documented it plainly as a speed bump with no financial exposure
+(free-tier key), rather than claiming stronger security than it has.
 

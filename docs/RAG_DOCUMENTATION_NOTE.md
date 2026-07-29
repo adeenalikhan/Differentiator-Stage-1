@@ -49,6 +49,21 @@ source records it was built from. Answers never assert facts the records don't s
    (defaults to a free model). Without a key the app still runs in extractive-grounded mode.
 4. Deploy. (Next.js auto-detected; no other config.)
 
+## Security posture
+The live URL is intentionally open (the brief requires a reviewer-reachable customer URL), so
+there is no login wall. Protection is scoped to abuse and discovery, not access:
+- **`noindex`** so search engines do not crawl or list it (unlisted, not secret).
+- **Input/token caps** (400-char queries, capped generation).
+- **Best-effort per-IP rate limit** (~12/min). Honest limitation, verified by testing: it is
+  in-memory per serverless instance, so Vercel's horizontal scaling bypasses it under a
+  concurrent burst (a 25-request concurrent burst was not throttled). It is a speed bump, not a
+  wall.
+- **No financial exposure:** the OpenRouter key is free-tier with no billing attached. Abuse is
+  throttled by OpenRouter, after which the app serves the keyless extractive answer. Nothing can
+  run up a charge.
+A genuine cross-instance rate limit would use a shared store (Upstash / Vercel KV); not added
+because there is no cost to protect against on a free-tier review demo.
+
 ## Testing
 - Retrieval: `npm run eval` (recall@k on labelled queries) — mirrors `rag/prototype.py`.
 - Answer layer (faithfulness): run the live queries below against the deployed URL and check

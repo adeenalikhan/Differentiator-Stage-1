@@ -308,3 +308,18 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   broker-inferred).
 - **Signal:** 13F holdings + report dates (US filers) · press (recent deals/hires/appointments) for the
   rest.
+
+### [2026-07-29] rag — abuse-protection hardening (and an honest negative result)
+- Goal: the live URL is publicly reachable (required); reduce abuse/quota-drain and casual
+  discovery without an auth wall that would block the reviewer.
+- Method: added a per-IP in-memory rate limit (~12/min -> 429), `noindex`, and kept the input
+  (400 char) / token caps.
+- Result (tested against the live endpoint): the rate limit did NOT trip. 16 sequential
+  requests -> 16 allowed / 0 limited (each waits ~15s on the free model, so they spread past the
+  60s window); a 25-request CONCURRENT burst -> 0 limited (Vercel spread it across serverless
+  instances, so no single in-memory counter reached the threshold).
+- Decision: keep it as a best-effort speed bump and document it as such rather than overclaim.
+  A real cross-instance limit needs a shared store (Upstash/Vercel KV); not added because the
+  OpenRouter key is free-tier with no billing (abuse is throttled by OpenRouter -> the app
+  serves the keyless extractive answer -> nothing can bill). `noindex` + caps do the useful
+  work. Recorded here because a documented negative result is worth more than a silent claim.
