@@ -230,3 +230,62 @@ re-verified against the live URL (see `rag/app/README.md`).
   for ~10–30s. This is a deliberate cost trade-off (no paid key): we wait for the LLM-grounded
   answer rather than downgrade to the extractive fallback, and the UI states the expected wait.
   A paid/faster model key (`OPENROUTER_MODEL`) drops responses to 1–3s with no code change.
+
+---
+
+## Part 3 — Summary (direct answers to the brief's checklist)
+
+### 3.1 How the system found the records (discovery)
+Four independent discovery source classes, deliberately different mechanisms so no one blind
+spot dominates (final mix 17 sec-13f · 17 press · 8 uk · 8 apac, max 34%):
+- **SEC EDGAR 13F-HR full-text search** — programmatic; distinct 13F filers whose documents
+  mention "family office" (`pipeline/discovery/sec_13f.py`).
+- **UK Companies House advanced search** — active companies by family-office name patterns
+  (`pipeline/discovery/uk_companies_house.py`).
+- **Press / known-UHNW-individual reverse-discovery** — for hidden-name SFOs that phrase-search
+  structurally misses (Cascade, Bezos, Dell, Soros, LEGO, L'Oréal…), each confirmed against a
+  primary source.
+- **Singapore / APAC registry + press** — the 13O/13U hub (Dyson, Dalio, UOB, Nippon Paint…).
+
+### 3.2 How it enriched them (entity / principal / signal)
+- **Entity:** type, thesis, sectors, AUM, corporate LinkedIn, HQ — from firm sites, SEC filings,
+  Companies House SIC, and press.
+- **Principal:** the *reachable* investment decision-maker (CIO/CEO, not the figurehead), current
+  title, individual `/in/` LinkedIn.
+- **Signal:** dated 2026 activity (13F holdings, hires, deals, news).
+- **Method split:** deterministic government-API enrichment (13F signature blocks, IAPD adviser
+  registration, Companies House officers/PSC, published-email harvesting) carried classification,
+  phones, and firm proof at zero model cost; research agents (held to a strict sourced-JSON
+  no-fabrication contract) carried the judgement-heavy principal/email work.
+
+### 3.3 How I validated the AI's output
+Validation *changes what ships*, it does not merely measure:
+1. **No-fabrication ingest gate** (`ingest_research.py`): drops generic mailboxes, rejects any
+   LinkedIn that isn't an individual `/in/` profile, and downgrades a "verified" email that has
+   no source URL.
+2. **Email re-verification at source** (`pipeline/validation/validate.py`): re-fetches each
+   email's cited page and only keeps `verified` if the address literally appears there;
+   fetched-but-absent → downgraded; `invalid`/`undeliverable` → removed to the audit sheet.
+3. **Firm-proof qualification (Rule 2):** only firms with affirmative FO evidence qualify;
+   disproven ones (e.g. "Family Office Research LLC" = branding-only wealth manager; 22 banks
+   that matched "family office" only in holdings text) are rejected to the audit record.
+4. **Independent manual spot-checks:** I personally re-fetched sample emails (Callan, Custos,
+   CVA, Pioneer) and confirmed them at source; caught a bad auto-match (`timonier@timonier.com`).
+5. **Answer-layer validation (the RAG):** live queries confirm the deployed system answers only
+   from the records and **declines** on off-topic and thin-evidence queries — both layers tested,
+   not just the data.
+
+### 3.4 Which source classes supported which kinds of claims
+| Source class | Claims it was trusted for | Claims it was NOT trusted for |
+|---|---|---|
+| **SEC 13F-HR** | firm existence, legal name, HQ address, AUM floor (equities), dated holdings signals, firm phone + signatory (signature block) | SFO/MFO type on its own; individual emails |
+| **SEC IAPD (adviser reg.)** | SFO-vs-MFO signal (registered→serves clients; absent→family-office exemption), CRD/SEC#, verified office address | contacts; recent signals |
+| **UK Companies House** | firm existence, registered address, SIC activity class, officers/directors, **PSC → controlling family (SFO proof)** | emails; investment thesis |
+| **Reputable press** | SFO identification, family affiliation, "why-now" signals, AUM estimates (dated) | sole proof of type without corroboration; contacts |
+| **Firm websites / team pages** | **published individual emails**, principal titles, thesis/description | firm existence proof on its own |
+| **LinkedIn (search snippets)** | individual `/in/` profile + reachable-principal identity | anything unverifiable (profiles aren't fetchable — matched via snippet) |
+
+### 3.5 Material blind spots that remained
+See the "Material blind spots that remain" section above (contact-completeness unevenness,
+US-weighting, floor-not-total AUM, a few unconfirmed LinkedIn / dated phones, reserve pool beyond
+50, free-tier verification ceiling, RAG latency).
