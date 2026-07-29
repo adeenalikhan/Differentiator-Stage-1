@@ -15,6 +15,10 @@ source records it was built from. Answers never assert facts the records don't s
 - **Chunking:** record-level. Each family office is one structured "card" (firm, type,
   principal, contact, AUM, sectors, dated signals). With 50 records, record-level chunks keep
   each answer traceable to a whole, verifiable entity rather than a fragment.
+- **Embedding model: none — by design.** At 50 records, lexical + structured retrieval matches
+  the right records reliably (validated in `rag/prototype.py`) without the cost, cold-start, and
+  bundling risk of a vector model in a keyless serverless deploy. A build-time embedding model +
+  vector index is the documented upgrade for larger corpora (`docs/RAG_DESIGN.md`, tagged SPEC).
 - **Stage 1 — structured + lexical:** parse the query for type (SFO/MFO), country, sector,
   recency and contact intent; score every record with BM25-ish lexical similarity + field
   boosts + an entity-name boost (so "Bill Gates's office" pins Cascade). Validated against
