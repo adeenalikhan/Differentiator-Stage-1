@@ -35,9 +35,11 @@ billionaire figurehead. All values reconcile with `data/final/family_office_data
   re-traceable to the filing URL.
 - **Confidence:** firm HIGH; type SFO HIGH; principal HIGH; phone HIGH (SEC filing); email
   UNRESOLVED (honest). Tier **B+**.
-- **Exact sources:** filing `https://www.sec.gov/Archives/edgar/data/1536411/000153641126000004/primary_doc.xml`;
-  `https://13f.info/manager/0001536411-duquesne-family-office-llc`;
-  press (Institutional Investor / Fool profiles).
+- **Exact sources:**
+  - Filing: `https://www.sec.gov/Archives/edgar/data/1536411/000153641126000004/primary_doc.xml`
+  - `https://13f.info/manager/0001536411-duquesne-family-office-llc`
+  - `https://www.fool.com/investing/how-to-invest/famous-investors/duquesne-family-office`
+  - `https://www.institutionalinvestor.com/article/stan-druckenmiller-overhauls-his-family-offices-us-stock-portfolio`
 
 ---
 
@@ -63,9 +65,11 @@ billionaire figurehead. All values reconcile with `data/final/family_office_data
   provenance.
 - **Confidence:** firm HIGH; type MFO HIGH; principal HIGH; **email VERIFIED** (re-confirmed
   at source); phone HIGH; LinkedIn confirmed. Tier **A+**.
-- **Exact sources:** `https://callanfamilyoffice.com/team/jack-ginter/` (email);
-  `https://www.linkedin.com/in/jack-ginter-70276773/`;
-  `https://adviserinfo.sec.gov/firm/summary/...` ; RIABiz 2024 feature (AUM/signal).
+- **Exact sources:**
+  - Email: `https://callanfamilyoffice.com/team/jack-ginter/`
+  - LinkedIn: `https://www.linkedin.com/in/jack-ginter-70276773/`
+  - Adviser registration: `https://adviserinfo.sec.gov/firm/summary/317446` (CRD 317446, SEC# 801-122987)
+  - AUM/signal: `https://riabiz.com/a/2024/4/9/an-abbot-downing-breakaway-but-not-exactly-callan-family-office-hits-5-billion-of-aum-after-just-two-years-using-a-creative-callan-brand-deal-and-a-partnership-model`
 
 ---
 
@@ -75,6 +79,11 @@ billionaire figurehead. All values reconcile with `data/final/family_office_data
   his family office entity (Willett Advisors). Class: `press`. This is a *different discovery
   mechanism* from SEC name-search (Willett's name contains no "family office"), which is
   exactly why the multi-source approach matters.
+- **Extraction method:** two-part. (1) Identity, type, principal and AUM extracted from
+  reputable press + a research agent under the strict sourced-JSON contract. (2) The firm phone
+  and address were pulled deterministically by `pipeline/enrichment/sec_sfo_phone.py`, which
+  looked up Willett's CIK (0001509379), fetched its 13F `primary_doc.xml`, and parsed the
+  signature block — the same cover parser used for the 13F set.
 - **Proof (proven here):** Wikipedia + family-office trade press name Willett Advisors as
   Michael Bloomberg's family office; SEC registration corroborates the entity. `fo_type = SFO`,
   `fo_proof_strength = strong`.
