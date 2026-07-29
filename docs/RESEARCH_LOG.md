@@ -4,7 +4,7 @@ Append-only. Newest entries at the bottom. This is a log of what was *attempted*
 retrospective of what worked. Failed attempts are recorded on purpose — a claim that
 something "could not be found" is only credible with the failed attempts behind it.
 
-**Entry format**
+## Entry format
 
 ```
 ### [YYYY-MM-DD HH:MM] <phase> — <source/tool>
@@ -246,7 +246,7 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
 
 ### Enrichment & verification SERVICES attempted — and paths deliberately NOT pursued
 
-**Services actually used (and what each produced):**
+#### Services actually used (and what each produced)
 - **SEC EDGAR** (13F-HR full-text + `data.sec.gov` submissions + `primary_doc.xml`) — discovery,
   legal name, HQ, AUM floor, holdings signals, signature-block phone. Free, no key.
 - **SEC IAPD adviser API** (`api.adviserinfo.sec.gov/search/firm`) — SFO-vs-MFO signal (registered
@@ -255,7 +255,7 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
 - **Web research agents** (WebSearch/WebFetch) — firm sites, press, LinkedIn search snippets.
 - **Site-contact harvester** (`site_contacts.py`, urllib) — published `mailto:` individual emails.
 
-**Enrichment services deliberately NOT pursued, and why:**
+#### Enrichment services deliberately NOT pursued, and why
 - **Apollo / Hunter / RocketReach / Prospeo / Clay free tiers** — planned in §1.4, then rejected as
   a *source of shipped contacts*. Their free outputs are broker-inferred or masked (`g***@firm.com`,
   RocketReach listings), which the brief disqualifies (not attested to the named person). Using them
@@ -264,13 +264,13 @@ Phases: `discovery` · `entity-enrichment` · `principal` · `contact` · `signa
   (Boston, Arrowroot, Wealthgate, PMG, Schwarz) they were explicitly **excluded** — logged above.
 - **Paid enrichment (FINTRX / PitchBook / Bloomberg Terminal)** — out of budget (free-only).
 
-**Verification services deliberately NOT pursued, and why:**
+#### Verification services deliberately NOT pursued, and why
 - **Paid email verifiers (NeverBounce / ZeroBounce / MillionVerifier)** — paid; not used.
 - **SMTP / deliverability checks** — deliberately NOT used as the ownership control: deliverability
   confirms a mailbox *exists*, not *whose* it is (brief's explicit warning). Our email verification is
   **source re-fetch** (confirm the address is published on the cited page) — stronger for ownership.
 
-**Discovery paths deliberately NOT pursued, and why:**
+#### Discovery paths deliberately NOT pursued, and why
 - **SEC Form D** (261 phrase matches, probed) — not harvested. Form D issuers are fund *vehicles*,
   not the FO entity, and related-persons skew to counsel/administrators -> lower precision than 13F.
   Left as a documented next-round lever.
