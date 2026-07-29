@@ -82,7 +82,7 @@ export default function Home() {
       </div>
       <div className="chips">{EXAMPLES.map((e) => <button key={e} className="chip" onClick={() => run(e)}>{e}</button>)}</div>
 
-      {loading && <div className="note">Searching the family-office dataset and grounding the answer… (a few seconds)</div>}
+      {loading && <div className="note">Searching the dataset and generating a grounded answer… this can take 10–30s on the free model.</div>}
 
       {state.status === "decline" && <div className="panel warn"><strong>Not enough verified evidence to answer that.</strong><p>{state.message}</p></div>}
       {state.status === "empty" && <div className="panel warn">{state.message}</div>}

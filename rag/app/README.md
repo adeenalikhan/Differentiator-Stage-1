@@ -51,8 +51,14 @@ source records it was built from. Answers never assert facts the records don't s
   path fires on out-of-scope queries; extractive mode guarantees no fabrication.
 - **Doesn't (yet):** semantic recall is lexical-only in stage 1 (no vector index) — fine for
   50 records, would miss paraphrase at larger scale.
-- **Would improve:** add the distilled cross-encoder reranker + a vector index for scale;
-  add per-answer citation highlighting; log to a store rather than stdout.
+- **Free-model latency (stated caveat):** the answer layer uses a **free** OpenRouter model
+  (`openai/gpt-oss-20b:free`), which frequently **queues for 10–30s**. This is a cost decision
+  (no paid key), not a design flaw. We choose to **wait for the LLM-grounded answer** (function
+  budget 48s / `maxDuration` 60s) rather than downgrade quality; a keyless **extractive-grounded**
+  answer is served only as a last-resort safety net if the model errors or exceeds the budget.
+  With a paid/faster model key, responses would be 1–3s — swap it in via `OPENROUTER_MODEL`.
+- **Would improve:** faster/paid model for latency; distilled cross-encoder reranker + a vector
+  index for scale; per-answer citation highlighting; log to a store rather than stdout.
 
 ## Live queries run against the deployed system
 Run against https://differentiator-stage-1-six.vercel.app on 2026-07-29 (mode: `llm-grounded`,

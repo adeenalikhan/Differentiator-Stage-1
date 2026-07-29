@@ -226,3 +226,7 @@ re-verified against the live URL (see `rag/app/README.md`).
   records sit in reserve rather than being forced in past the single-source ceiling.
 - **Free-only tooling caps email verification** at "published/attested" — no paid enrichment means
   no provider-returned coverage for the harder SFOs.
+- **RAG answer latency.** The live answer layer runs on a **free** OpenRouter model that queues
+  for ~10–30s. This is a deliberate cost trade-off (no paid key): we wait for the LLM-grounded
+  answer rather than downgrade to the extractive fallback, and the UI states the expected wait.
+  A paid/faster model key (`OPENROUTER_MODEL`) drops responses to 1–3s with no code change.

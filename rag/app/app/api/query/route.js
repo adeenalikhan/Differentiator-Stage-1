@@ -2,10 +2,13 @@ import { retrieve, SUFFICIENCY, META } from "../../../lib/retrieval.js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 25; // allow headroom; we still self-cap the LLM below
+export const maxDuration = 60; // Vercel Hobby max; free models can queue for 10-30s
 
-const LLM_BUDGET_MS = 8500; // hard cap on total LLM time -> else serve instant extractive answer
-const PER_CALL_MS = 7000;
+// LLM grounding is the intended path. Give the (slow, free) model real time to finish so we
+// return an LLM-grounded answer; the extractive path is only a last-resort safety net if the
+// model errors or exceeds the budget entirely. See README/METHODOLOGY: free-model latency caveat.
+const LLM_BUDGET_MS = 48000; // total time allowed for LLM grounding before falling back
+const PER_CALL_MS = 40000;   // per-model attempt cap
 
 // Currently-free OpenRouter models, tried in order (resilient to a slug being deprecated —
 // which is exactly how the first deploy failed). Override with OPENROUTER_MODEL.
