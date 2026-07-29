@@ -10,6 +10,20 @@ export const maxDuration = 60; // Vercel Hobby max; free models can queue for 10
 const LLM_BUDGET_MS = 48000; // total time allowed for LLM grounding before falling back
 const PER_CALL_MS = 40000;   // per-model attempt cap
 
+// Abuse protection: per-IP rate limit so a bot cannot drain the free model quota. In-memory
+// per serverless instance (best-effort at demo scale), not a hard security boundary. The URL
+// stays openly reachable for the reviewer by design — the brief requires a live customer URL.
+const RL = new Map(); // ip -> [timestamps ms]
+const RL_WINDOW_MS = 60000, RL_MAX = 12;
+function rateLimited(ip) {
+  const now = Date.now();
+  const hits = (RL.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
+  hits.push(now);
+  RL.set(ip, hits);
+  if (RL.size > 5000) RL.clear(); // crude memory cap
+  return hits.length > RL_MAX;
+}
+
 // Currently-free OpenRouter models, tried in order (resilient to a slug being deprecated —
 // which is exactly how the first deploy failed). Override with OPENROUTER_MODEL.
 const MODELS = [
@@ -108,6 +122,14 @@ export async function POST(req) {
   try { ({ query } = await req.json()); } catch {}
   query = (query || "").toString().slice(0, 400).trim();
   if (!query) return Response.json({ status: "empty", message: "Please enter a question." }, { status: 400 });
+
+  const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+  if (rateLimited(ip)) {
+    return Response.json({
+      status: "rate_limited",
+      message: "You're sending queries quickly. Please wait about a minute and try again.",
+    }, { status: 429 });
+  }
 
   const { candidates, top, filters } = retrieve(query, 8);
 

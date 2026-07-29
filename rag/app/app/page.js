@@ -111,6 +111,7 @@ export default function Home() {
 
       {state.status === "decline" && <div className="panel warn"><strong>No confident answer from the dataset.</strong><p>{state.message}</p></div>}
       {state.status === "empty" && <div className="panel warn">{state.message}</div>}
+      {state.status === "rate_limited" && <div className="panel warn"><strong>Please slow down.</strong><p>{state.message}</p></div>}
       {state.status === "error" && <div className="panel err">{state.message}</div>}
 
       {(state.status === "answer" || state.status === "partial") && (
