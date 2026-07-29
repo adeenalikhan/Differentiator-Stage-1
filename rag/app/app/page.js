@@ -84,7 +84,7 @@ export default function Home() {
 
       {loading && <div className="note">Searching the dataset and generating a grounded answer… this can take 10–30s on the free model.</div>}
 
-      {state.status === "decline" && <div className="panel warn"><strong>Not enough verified evidence to answer that.</strong><p>{state.message}</p></div>}
+      {state.status === "decline" && <div className="panel warn"><strong>No confident answer from the dataset.</strong><p>{state.message}</p></div>}
       {state.status === "empty" && <div className="panel warn">{state.message}</div>}
       {state.status === "error" && <div className="panel err">{state.message}</div>}
 

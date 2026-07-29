@@ -116,8 +116,9 @@ export async function POST(req) {
     log({ query, top, gate: "decline", filters, ms: Date.now() - t0 });
     return Response.json({
       status: "decline",
-      message: "I don't have a record in this dataset that confidently answers that. "
-        + "Try a family-office type (single/multi-family), a country, a sector (e.g. venture, real estate), "
+      message: "This tool answers only from its 50 verified family-office records, so it can't help "
+        + "with general questions. Ask about family offices instead — try a type (single- or "
+        + "multi-family), a country, a sector (e.g. venture, real estate), a recent-activity query, "
         + "or a specific family or firm name.",
       meta: META,
     });
