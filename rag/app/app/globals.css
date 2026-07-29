@@ -29,7 +29,13 @@ header h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.02em; }
 .panel.answer { border-color: #dbeafe; background: #f5f9ff; }
 .answer-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
 .mode { font-size: 11px; font-weight: 600; color: #1e40af; background: #dbeafe; padding: 3px 9px; border-radius: 999px; }
-.answer-body p { margin: 6px 0; } .answer-body p:empty { display: none; }
+.answer-body p { margin: 7px 0; } .answer-body p:empty { display: none; }
+.answer-body a { word-break: break-word; }
+.answer-body .ans-item { position: relative; padding-left: 18px; margin: 13px 0 2px; }
+.answer-body .ans-item::before { content: "▸"; position: absolute; left: 0; top: 0; color: var(--accent); }
+.answer-body .ans-item strong { color: var(--ink); font-weight: 700; }
+.answer-body .ans-sub { margin: 0 0 4px 18px; color: var(--muted); font-size: 13px; }
+.answer-body .ans-sub em { font-style: normal; font-weight: 600; color: #475569; }
 
 .sources-label { font-size: 13px; color: var(--muted); margin: 26px 2px 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
 .sources { display: grid; gap: 12px; }

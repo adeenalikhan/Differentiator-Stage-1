@@ -9,6 +9,31 @@ const EXAMPLES = [
   "Family offices with recent 2026 activity",
 ];
 
+// Lightweight inline markdown: **bold**, *italic*, and URLs -> clickable links.
+function inline(text) {
+  const re = /\*\*(.+?)\*\*|\*(.+?)\*|(https?:\/\/[^\s)]+)/g;
+  const out = []; let last = 0, m, k = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(<span key={k++}>{text.slice(last, m.index)}</span>);
+    if (m[1]) out.push(<strong key={k++}>{m[1]}</strong>);
+    else if (m[2]) out.push(<em key={k++}>{m[2]}</em>);
+    else out.push(<a key={k++} href={m[3]} target="_blank" rel="noreferrer">{m[3].replace(/^https?:\/\//, "").replace(/\/$/, "")}</a>);
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(<span key={k++}>{text.slice(last)}</span>);
+  return out;
+}
+
+// Render the answer with structure: "- " lines become firm bullets; "why now" lines become
+// muted sub-text; everything else is a paragraph. (LLM output is markdown-ish.)
+function renderRich(text) {
+  return (text || "").split("\n").map((l) => l.trim()).filter(Boolean).map((l, i) => {
+    if (/^[-*]\s+/.test(l)) return <p key={i} className="ans-item">{inline(l.replace(/^[-*]\s+/, ""))}</p>;
+    if (/^\*?\s*why\s*now/i.test(l)) return <p key={i} className="ans-sub">{inline(l)}</p>;
+    return <p key={i}>{inline(l)}</p>;
+  });
+}
+
 function StatusBadge({ status }) {
   const map = {
     verified: ["Verified", "#166534", "#dcfce7"],
@@ -92,7 +117,7 @@ export default function Home() {
         <>
           <div className="panel answer">
             <div className="answer-head"><span>Answer</span><span className="mode" title="How the answer was produced">{state.mode === "llm-grounded" ? "grounded (LLM)" : "grounded (extractive)"}</span></div>
-            <div className="answer-body">{state.answer.split("\n").map((l, i) => <p key={i}>{l}</p>)}</div>
+            <div className="answer-body">{renderRich(state.answer)}</div>
           </div>
           <div className="sources-label">Sources ({state.sources.length}) — the records this answer is built from</div>
           <div className="sources">{state.sources.map((s) => <SourceCard key={s.firm} s={s} />)}</div>
