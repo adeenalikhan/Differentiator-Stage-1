@@ -18,6 +18,7 @@ the delivery mechanism.
 | `docs/AI_SESSIONS.md` | AI-session scope statement + the key prompt templates given to the models. |
 | `docs/TASK2_SAAS_CONVERSION_ANALYSIS.md` | Task 2: the SaaS free-to-paid conversion analysis + reasoning. |
 | `rag/app/` | Live Micro-RAG (Next.js on Vercel): retrieval + grounded answers + decline gate + UI. |
+| `docs/RAG_DOCUMENTATION_NOTE.md` | RAG documentation note (stack, chunking, embedding, retrieval, works/doesn't, live queries, improvements). Copy of `rag/app/README.md` for attaching. |
 | `pipeline/` | The system: discovery, enrichment, validation, export. |
 | `data/raw/` | Candidate pool, tagged by the source class that found each firm. |
 | `data/audit/` | Rejected firms and rejected cell values (never shipped, kept for honesty). |
